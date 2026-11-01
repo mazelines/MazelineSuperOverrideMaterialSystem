@@ -1,0 +1,11 @@
+// Function ID 2: three hard diffuse bands and a broad specular response.
+// Thresholds affect albedo modulation, not the final screen-space color.
+void MazelineEvaluateShaderOverride(
+    float3 BaseColor, float Metallic, float3 N, float3 V, float3 L,
+    inout float3 DiffuseColor, inout float Roughness)
+{
+    float Facing = dot(normalize(N), normalize(L));
+    float Band = Facing > 0.65 ? 1.0 : (Facing > 0.25 ? 0.50 : 0.12);
+    DiffuseColor *= Band;
+    Roughness = saturate(max(Roughness, 0.75));
+}

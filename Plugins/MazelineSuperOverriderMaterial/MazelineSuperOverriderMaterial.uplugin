@@ -1,0 +1,14 @@
+{
+  "FileVersion": 3,
+  "Version": 3,
+  "VersionName": "0.3.0",
+  "SupportedTargetPlatforms": ["Win64"],
+  "FriendlyName": "Mazeline Super Overrider Material",
+  "Description": "Material override tools for Unreal Editor.",
+  "Category": "Materials",
+  "CanContainContent": true,
+  "Installed": false,
+  "Modules": [
+    { "Name": "MazelineSuperOverriderMaterial", "Type": "Editor", "LoadingPhase": "Default" }
+  ]
+}

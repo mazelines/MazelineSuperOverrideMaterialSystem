@@ -1,0 +1,12 @@
+// Function ID 1: soft light response and a cool tint in the transition.
+// This modifies diffuse albedo; the engine's BRDF and shadows still follow.
+void MazelineEvaluateShaderOverride(
+    float3 BaseColor, float Metallic, float3 N, float3 V, float3 L,
+    inout float3 DiffuseColor, inout float Roughness)
+{
+    float Facing = dot(normalize(N), normalize(L));
+    float SoftLight = smoothstep(-0.2, 0.8, Facing);
+    float3 Tint = lerp(float3(0.60, 0.72, 1.0), float3(1.0, 1.0, 1.0), SoftLight);
+    DiffuseColor *= Tint * lerp(0.40, 1.0, SoftLight);
+    Roughness = saturate(Roughness);
+}
