@@ -1,0 +1,21 @@
+#include "/Engine/Public/Platform.ush"
+
+Texture2D<float4> InputAtlas;
+SamplerState InputSampler;
+uint2 InputSize;
+uint2 OutputSize;
+uint Slice;
+uint Enabled;
+RWTexture2DArray<float4> OutputAtlas;
+
+[numthreads(8, 8, 1)]
+void MainCS(uint3 DispatchId : SV_DispatchThreadID)
+{
+    uint2 Pixel = DispatchId.xy;
+    if (any(Pixel >= OutputSize)) return;
+    float Facing = (float)Pixel.x / max(1u, OutputSize.x - 1);
+    float2 UV = float2((Facing * (InputSize.x - 1) + 0.5f) / InputSize.x,
+                      (min(Pixel.y, InputSize.y - 1) + 0.5f) / InputSize.y);
+    float4 Color = Enabled != 0 ? InputAtlas.SampleLevel(InputSampler, UV, 0) : float4(Facing.xxx, 1);
+    OutputAtlas[uint3(Pixel, Slice)] = Color;
+}

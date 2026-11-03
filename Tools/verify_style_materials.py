@@ -1,5 +1,6 @@
-"""Read back saved assets and assert the three style registrations and graph paths."""
+"""Read back the two active styles and verify HybridToon retirement."""
 import json
+import re
 from pathlib import Path
 import unreal
 
@@ -7,7 +8,9 @@ assets = unreal.EditorAssetLibrary
 lib = unreal.MaterialEditingLibrary
 root = '/Game/MazelineTests'
 rows = []
-for number, style in [(1, 'Stylized'), (2, 'Toon'), (3, 'HybridToon')]:
+assert not assets.does_asset_exist(root + '/M_HybridToon')
+assert not (Path(unreal.Paths.project_dir()) / 'Shaders/Private/HybridToon.ush').exists()
+for number, style in [(1, 'Stylized'), (2, 'Toon')]:
     material = assets.load_asset(root + '/M_' + style)
     assert isinstance(material, unreal.Material), style
     customs = [n for n in lib.get_material_expressions(material) if isinstance(n, unreal.MaterialExpressionCustom)]
@@ -34,8 +37,6 @@ for number, style in [(1, 'Stylized'), (2, 'Toon'), (3, 'HybridToon')]:
         visited.add(node)
         queue.extend(lib.get_inputs_for_material_expression(material, node))
     assert custom in visited, style + ': Custom disconnected'
-    if style == 'HybridToon':
-        assert inputs['BaseColor'] == 'MaterialExpressionMultiply', 'User color multiply was lost'
     rows.append({'material': material.get_path_name(), 'id': number, 'style': style,
                  'include': list(custom.get_editor_property('include_file_paths')), 'pins': inputs,
                  'custom_reachable': True, 'node_count': len(lib.get_material_expressions(material))})
@@ -49,13 +50,23 @@ for name in ['M_Override', 'M_RoughnessOverride']:
             assert not list(node.get_editor_property('include_file_paths')), name
 
 levels = unreal.get_editor_subsystem(unreal.LevelEditorSubsystem)
-assert levels.load_level(root + '/L_ForwardComparison')
+assert levels.load_level(root + '/Example')
 actors = unreal.get_editor_subsystem(unreal.EditorActorSubsystem).get_all_level_actors()
 for row in rows:
     actor = next(a for a in actors if a.get_actor_label() == 'Mazeline ' + row['style'])
     component = actor.get_component_by_class(unreal.StaticMeshComponent)
-    assert component.get_material(0).get_path_name() == row['material'], row['style']
+    assigned = component.get_material(0)
+    if isinstance(assigned, unreal.MaterialInstanceConstant):
+        assigned = assigned.get_editor_property('parent')
+    assert assigned.get_path_name() == row['material'], row['style']
 
-output = Path(unreal.Paths.project_saved_dir()) / 'StyleMigration/verification.json'
-output.write_text(json.dumps({'passed': True, 'materials': rows, 'scene_assignments': 3}, indent=2), encoding='utf-8')
+assert not any('HybridToon' in a.get_actor_label() for a in actors)
+for actor in actors:
+    for component in actor.get_components_by_class(unreal.TextRenderComponent):
+        assert not re.search(r'hybrid\s*toon', str(component.get_editor_property('text')), re.IGNORECASE)
+registry = json.loads((Path(unreal.Paths.project_saved_dir()) / 'Mazeline/deferred_registry.json').read_text(encoding='utf-8-sig'))
+assert [entry['id'] for entry in registry['functions']] == [1, 2]
+
+output = Path(unreal.Paths.project_saved_dir()) / 'HybridRetirement/verification.json'
+output.write_text(json.dumps({'passed': True, 'materials': rows, 'active_function_ids': [1, 2]}, indent=2), encoding='utf-8')
 unreal.log('MAZELINE_STYLE_VERIFIED ' + str(output))

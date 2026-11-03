@@ -32,7 +32,7 @@ void SMazelineMaterialSettings::Construct(const FArguments& Args)
             + SVerticalBox::Slot().AutoHeight().Padding(0, 0, 0, 12)
             [ SNew(STextBlock).Text(this, &SMazelineMaterialSettings::StatusText).AutoWrapText(true) ]
             + SVerticalBox::Slot().AutoHeight().Padding(0, 0, 0, 12)
-            [ SNew(STextBlock).Text(FText::FromString(TEXT("Apply scans connected Custom Expressions and installs or updates both rendering paths. Restore returns all three engine shaders to their backed-up originals. Changes take effect after restarting the editor."))).AutoWrapText(true) ]
+            [ SNew(STextBlock).Text(FText::FromString(TEXT("Apply scans connected Custom Expressions, registers their Curve Atlas inputs, and updates both rendering paths. Restore returns all five engine shaders to their backed-up originals. Restart after patching; curve key edits and RampRow changes update without repatching."))).AutoWrapText(true) ]
             + SVerticalBox::Slot().AutoHeight().Padding(0, 0, 0, 12)
             [
                 SNew(SWrapBox).UseAllottedSize(true).InnerSlotPadding(FVector2D(8, 8))

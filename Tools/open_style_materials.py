@@ -1,7 +1,7 @@
 """Show the migrated materials after the normal editor has finished starting."""
 import unreal
 
-paths = ['/Game/MazelineTests/M_Stylized', '/Game/MazelineTests/M_Toon', '/Game/MazelineTests/M_HybridToon']
+paths = ['/Game/MazelineTests/M_Stylized', '/Game/MazelineTests/M_Toon']
 handle = None
 
 def show_materials(_delta):

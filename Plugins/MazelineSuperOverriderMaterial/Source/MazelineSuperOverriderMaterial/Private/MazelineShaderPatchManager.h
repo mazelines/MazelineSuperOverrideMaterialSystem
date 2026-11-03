@@ -46,6 +46,7 @@ private:
     bool ReadCurrent(FBundle& Bundle, FString& Error) const;
     bool ReadState(TSharedPtr<FJsonObject>& State, FString& Error) const;
     bool ReadSnapshot(const FString& Id, FBundle& Bundle, FString& Error) const;
+    bool EnsureLegacyExtension(const TSharedPtr<FJsonObject>& State, FString& Error) const;
     bool Snapshot(const FBundle& Bundle, const FString& Type, FString& Id, FString& Error) const;
     bool Ready(const TSharedPtr<FJsonObject>& State, FBundle& Before, FString& Error) const;
     bool Owns(const TSharedPtr<FJsonObject>& State, FString& Error) const;

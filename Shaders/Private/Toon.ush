@@ -1,11 +1,46 @@
-// Function ID 2: three hard diffuse bands and a broad specular response.
-// Thresholds affect albedo modulation, not the final screen-space color.
+// Function ID 2: a Curve Atlas for directional diffuse and one adjustable GGX lobe.
+// The lighting shader samples RampLUT per light; the Custom preserves Base Color.
+// A Custom with multiple output consumers can emit this include more than once.
+// The deferred registry renames the entry point with a macro and needs its own copy.
+#if defined(MazelineEvaluateShaderOverride) || !defined(MAZELINE_TOON_INCLUDED)
+#ifndef MazelineEvaluateShaderOverride
+#define MAZELINE_TOON_INCLUDED 1
+#endif
+#define MAZELINE_HAS_GGX_DISTRIBUTION_OVERRIDE 1
+#define MAZELINE_GGX_MATERIAL_PARAMETERS 1
+#define MAZELINE_DIRECTIONAL_RAMP 1
+
 void MazelineEvaluateShaderOverride(
     float3 BaseColor, float Metallic, float3 N, float3 V, float3 L,
     inout float3 DiffuseColor, inout float Roughness)
 {
-    float Facing = dot(normalize(N), normalize(L));
-    float Band = Facing > 0.65 ? 1.0 : (Facing > 0.25 ? 0.50 : 0.12);
-    DiffuseColor *= Band;
-    Roughness = saturate(max(Roughness, 0.75));
+    // Diffuse shaping is applied only after the light is classified as directional.
+    Roughness = saturate(Roughness);
 }
+
+// Reshape the actual GGX normal distribution D, normalized by its peak.
+// Fresnel, visibility, light-source normalization and shadowing remain in UE.
+// Sharpness: 0 = original GGX, 0..1 = continuous contrast, 1 = hard edge.
+// Threshold: relative GGX lobe level; lower values expand the bright region.
+// Material CustomData carries these controls independently of Specular and AO.
+float MazelineEvaluateGGXDistribution(float Distribution, float PeakDistribution, float Sharpness, float Threshold)
+{
+    if (Sharpness <= 0.0 || PeakDistribution <= 0.0)
+        return Distribution;
+
+    float X = saturate(Distribution / PeakDistribution);
+    float Pivot = clamp(Threshold, 0.0001, 0.9999);
+    if (Sharpness >= 1.0)
+        return PeakDistribution * step(Pivot, X);
+    if (X <= 0.0 || X >= 1.0)
+        return Distribution;
+
+    // Contrast around a threshold in log-odds space. No blending of two lobes.
+    float SafeX = clamp(X, 1e-7, 1.0 - 1e-7);
+    float PivotLogOdds = log2(Pivot / (1.0 - Pivot));
+    float Contrast = exp2(8.0 * saturate(Sharpness));
+    float Z = PivotLogOdds + Contrast * (log2(SafeX / (1.0 - SafeX)) - PivotLogOdds);
+    float Shaped = rcp(1.0 + exp2(clamp(-Z, -80.0, 80.0)));
+    return PeakDistribution * Shaped;
+}
+#endif

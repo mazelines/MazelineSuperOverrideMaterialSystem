@@ -9,6 +9,7 @@
   "CanContainContent": true,
   "Installed": false,
   "Modules": [
+    { "Name": "MazelineMaterialRuntime", "Type": "Runtime", "LoadingPhase": "PostConfigInit" },
     { "Name": "MazelineSuperOverriderMaterial", "Type": "Editor", "LoadingPhase": "Default" }
   ]
 }

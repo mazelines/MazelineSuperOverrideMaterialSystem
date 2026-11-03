@@ -1,4 +1,4 @@
-"""One-time migration of the existing comparison materials using UE asset APIs.
+"""HISTORICAL: one-time three-style migration, superseded by Hybrid retirement.
 
 Requires the pre-migration Content/Shaders backup recorded in latest-backup.txt.
 Does not patch the engine; use the native MazelineShaderPatch commandlet next.
@@ -6,6 +6,8 @@ Does not patch the engine; use the native MazelineShaderPatch commandlet next.
 import json
 from pathlib import Path
 import unreal
+
+raise RuntimeError('Historical migration retired; use the current Stylized / Toon assets. Do not recreate HybridToon.')
 
 root = '/Game/MazelineTests'
 lib = unreal.MaterialEditingLibrary
