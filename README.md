@@ -4,6 +4,14 @@ Unreal Engine의 **Opaque / Default Lit** 머티리얼에 광원별 HLSL 함수�
 
 현재 플러그인 버전은 **0.3.0**이다. 패치 적용·갱신·복원·중단 복구는 모두 플러그인 내부 C++ 관리자가 수행한다. 자세한 머티리얼 작성법과 복구 명령은 [플러그인 README](Plugins/MazelineSuperOverriderMaterial/README.md)에 있다.
 
+## 데모 영상
+
+[![Toon 머티리얼과 GGX 하이라이트 파라미터를 보여 주는 X 데모 영상](Docs/Images/x-demo-2117269180819165500.jpg)](https://x.com/leegoonz73/status/2117269180819165500)
+
+**[▶ X에서 데모 영상 보기](https://x.com/leegoonz73/status/2117269180819165500)** · JPLEE (@leegoonz73) · 2026-11-02
+
+썸네일을 클릭하면 원본 X 포스팅에서 영상을 재생할 수 있다.
+
 ## 실행 환경
 
 | 항목 | 현재 구성 |
