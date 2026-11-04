@@ -81,6 +81,7 @@ Deferred에서는 shading-model ID 14와 기존 GBuffer의 per-object 2비트를
 
 **현재 Ramp·GGX 확장 버전의 쿠킹·패키징은 미검증이다.** Opaque Forward의 Rect Light는 실제 조명이 생성되지 않아 Ramp 격리 검증의 합격 범위에서 제외했다. 게임 타깃 빌드나 `UnrealEditor -game` 캡처를 패키징 검증으로 간주하지 않는다.
 
+- [블로그: Mazeline Super Override Material 시스템 Overview](https://techartnomad.tistory.com/918): 시스템 구조와 Toon Ramp·GGX 제어, 패치·복원 흐름 소개.
 - [플러그인 사용법](Plugins/MazelineSuperOverriderMaterial/README.md): Custom Expression, 출력 노드, 패치 UI, 복구 명령.
 - [개발 상태](Docs/Development-Status.md): 현재 기능과 지원 범위.
 - [구현 계획](Docs/Implementation-Plan.md), [BxDF 통합](Docs/UE58-BxDF-Integration.md): 설계와 구현 배경.
