@@ -2,7 +2,7 @@
 
 Epic 설치형 **Unreal Engine 5.8.4**, **Visual Studio 2022**용 플러그인이다. 연결된 Custom Expression에 `MAZELINE_SHADER_OVERRIDE`를 정의하고, 별도 HLSL에서 광원마다 DiffuseColor와 Roughness를 계산한다. 머티리얼별 GGX 파라미터와 Directional Ramp LUT를 사용하는 Toon도 Default Lit을 유지한다. 전용 출력 노드가 Sharpness·Threshold·RampRow를 전달한다. 엔진 C++ 바이너리를 다시 빌드하지 않으며, 엔진 셰이더 다섯 파일을 직접 패치한다.
 
-현재 프로젝트는 **Windows DX12/SM6**를 사용한다. Toon의 머티리얼별 Sharpness·Threshold는 Forward와 Deferred에서 런타임 인스턴스 값을 바꾸는 8개 렌더링 사례로 검증했다. 이번 파라미터 확장의 패키징 검증은 수행하지 않았다. 초기 0.2 버전은 DX11/SM5의 Opaque Default Lit에서 두 경로의 에디터 렌더링과 Win64 Development 쿠킹·패키징·실행, 입력 보존 및 일반 머티리얼 회귀를 검증했으며 그 결과는 과거 이력이다. Substrate, Nanite, 모바일, 경로 추적, 반투명 및 특수 렌더링 경로는 지원 범위에 포함하지 않는다.
+현재 프로젝트는 **Windows DX12/SM6**를 사용하며 기본 렌더러는 **Deferred**다. 최신 Ramp 검증에는 Forward·Deferred 유효 캡처 22개, 커브 키 수정 후 방향광 12개 재검증, GGX 파라미터 회귀 8개와 최종 네이티브 테스트 10개 통과가 기록되어 있다. 자세한 범위와 노드 미리보기 수정 검증은 [Directional Ramp 검증](../../Docs/Directional-Ramp.md#검증-2026-11-03)을 참조한다. **현재 Ramp·GGX 확장 버전의 쿠킹·패키징은 미검증이다.** 초기 0.2 버전은 DX11/SM5의 Opaque Default Lit에서 두 경로의 에디터 렌더링과 Win64 Development 쿠킹·패키징·실행, 입력 보존 및 일반 머티리얼 회귀를 검증했으며 그 결과는 과거 이력이다. Substrate, Nanite, 모바일, 경로 추적, 반투명 및 특수 렌더링 경로는 지원 범위에 포함하지 않는다. 프로젝트 설치·빌드와 예제 맵은 [루트 README](../../README.md)를 참조한다.
 
 ## 머티리얼 작성
 
@@ -28,9 +28,16 @@ Deferred 광원 셰이더는 머티리얼 그래프를 다시 실행하지 않�
 
 ## Directional Ramp LUT
 
-현재 예제는 Stylized(1) / Toon(2)이며 HybridToon은 제거했다. 함수 번호 3은 새 사용자 함수 등록에 사용할 수 있다. Toon은 Curve Editor의 RGB 커브로 Directional Light diffuse를 제어한다. `Custom.RampLUT`에는 Curve Atlas의 Texture Object, `Custom.RampRow`에는 행 번호 Scalar Parameter를 연결한다. `RampIndex = RampRow;` 추가 출력을 Mazeline Ramp Output에 연결한다. `MAZELINE_DIRECTIONAL_RAMP=1`이 광원 셰이더의 LUT 처리를 활성화한다.
+현재 예제는 Stylized(1) / Toon(2)이며 HybridToon은 제거했다. 함수 번호 3은 새 사용자 함수 등록에 사용할 수 있다. Toon은 Curve Editor의 RGB 커브로 Directional Light diffuse를 제어한다. `Toon.ush`의 `MAZELINE_DIRECTIONAL_RAMP=1`이 광원 셰이더의 LUT 처리를 활성화한다.
 
-함수 하나당 공유 Atlas 하나를 등록하고 행은 인스턴스별로 고른다. Custom에서 미리 샘플링하지 않으며 광원 방향으로 조명 패스에서 샘플링한다. Point·Spot·Rect diffuse와 GGX specular에는 램프를 적용하지 않는다. 커브 키·RampRow 변경은 재패치가 필요 없고, Atlas 에셋 교체는 Apply / Update와 재시작이 필요하다. 자세한 그래프·데이터 흐름·제한은 [Directional Ramp 문서](../../Docs/Directional-Ramp.md)를 참조한다.
+1. Custom에 `RampLUT`, `RampRow` 입력을 추가한다. `RampLUT`에는 Curve Atlas를 지정한 **Texture Object**, `RampRow`에는 행 번호 Scalar Parameter를 연결한다.
+2. Custom의 **Additional Outputs**에 이름 `RampIndex`, 타입 `Float1`을 추가한다. Code에 `RampIndex = RampRow;`를 넣고 기존 Base Color 반환 코드는 유지한다.
+3. **Mazeline Ramp Output** 노드를 하나 추가하고 Custom의 `RampIndex` 출력을 노드의 `RampRow` 입력에 연결한다.
+4. 예제 `/Game/MazelineTests/MI_Toon`의 **Toon Diffuse → RampRow**에서 0=Linear, 1=Soft, 2=Steps를 선택한다. 기본값은 2이며, `/Game/MazelineTests/Ramps/CA_ToonDiffuse`에 연결된 세 RGB 커브를 편집한다. 가로축은 `saturate(N·L)`이고 Alpha는 사용하지 않는다.
+
+함수 하나당 공유 Atlas 하나를 등록하고 행은 인스턴스별로 고른다. Atlas는 1~256개 커브를 지원하고 RampRow는 정수로 반올림해 0~255로 제한한다. 같은 함수 번호에 서로 다른 Atlas를 연결하거나 Texture Object Parameter로 인스턴스마다 Atlas를 교체하는 방식은 지원하지 않는다. Custom에서 미리 샘플링하지 않으며 광원 방향으로 조명 패스에서 샘플링한다. Point·Spot·Rect diffuse와 GGX specular에는 램프를 적용하지 않는다. Opaque Forward의 Rect Light는 실제 조명이 생성되지 않아 격리 검증에서 제외했고, Rect 격리는 Deferred에서 검증했다.
+
+커브 키·RampRow 변경은 재패치가 필요 없고, Atlas 에셋 교체는 Apply / Update와 재시작이 필요하다. Apply는 함수별 Atlas 경로를 프로젝트 `Config/DefaultGame.ini`의 `MazelineRampSettings`에 저장한다. 이 설정도 에셋과 함께 버전 관리한다. 자세한 그래프·데이터 흐름·제한은 [Directional Ramp 문서](../../Docs/Directional-Ramp.md)를 참조한다.
 
 ## GGX 분포의 선명도 조절
 
@@ -74,7 +81,7 @@ Forward는 머티리얼의 분포 콜백을, Deferred는 번호별 `MazelineDefe
 | Patch state | 미관리 `unmanaged`, 적용 `applied`, 원본 복원 `restored`, 중단 `interrupted`, 충돌 `conflict` 등과 파일 해시 일치 여부 |
 | Engine / Project owner / Backups | 대상 엔진, 활성 패치 소유 프로젝트, 백업 경로 |
 | Apply / Update Patch | 함수 수집부터 패치 적용·갱신까지 실행 |
-| Restore Original | 최초 백업의 세 엔진 셰이더를 복원하고 백업은 보존 |
+| Restore Original | 원본 백업에서 관리 대상 다섯 엔진 셰이더를 복원하고 백업은 보존 |
 | Recover Interrupted Operation | 중단된 트랜잭션을 작업 직전 상태로 복구 |
 | Refresh Status | 상태를 즉시 갱신; 화면은 3초마다 자동 갱신 |
 | Open Backups / Restart Editor | 백업 폴더 열기 / 변경 후 에디터 재시작 |
@@ -87,9 +94,12 @@ Forward는 머티리얼의 분포 콜백을, Deferred는 번호별 `MazelineDefe
 
 일반 복원은 설정 화면의 **Restore Original**, 중단 복구는 **Recover Interrupted Operation**으로 실행한 뒤 재시작한다. 파일 수정으로 에디터의 정상 기동이 어려우면 에디터를 종료하고 C++ 커맨드릿을 실행한다.
 
+저장소 루트에서 실행하는 예시다. 프로젝트 경로는 현재 체크아웃에서 확인하며, 엔진 경로는 설치 위치에 맞춘다. 명령 형식은 커맨드릿 구현과 대조했으며 이 문서 갱신 중 실제 복구 작업을 실행하지는 않았다.
+
 ```powershell
+$projectFile = (Resolve-Path './MazeLineMaterialTest.uproject').Path
 & 'C:/Program Files/Epic Games/UE_5.8/Engine/Binaries/Win64/UnrealEditor-Cmd.exe' `
-  'D:/UnrealProject/Projects/MazeLineMaterialPlugin/MazeLineMaterialTest.uproject' `
+  $projectFile `
   -run=MazelineShaderPatch -Action=recover -nullrhi -unattended -DisablePython
 ```
 
